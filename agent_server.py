@@ -3,8 +3,9 @@
 Simple Arena Agent Server for MixStudio / Chat Demo.
 This server listens continuously so the web app can connect.
 """
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 import time
+import os
 
 app = Flask(__name__)
 
@@ -44,13 +45,17 @@ def chat():
     })
 
 @app.route("/")
-def index():
-    return jsonify({
-        "name": "Arena Agent Server",
-        "description": "Persistent agent endpoint for MixStudio chat / Better Agents tier.",
-        "endpoints": ["GET /health", "POST /chat"],
-        "note": "This server must stay running. Refresh/restart manually if the session resets."
-    })
+def root():
+    # Serve the chat UI from the workspace
+    try:
+        return send_from_directory("chat_app", "index.html")
+    except Exception:
+        return jsonify({
+            "name": "Arena Agent Server",
+            "description": "Persistent agent endpoint for MixStudio chat / Better Agents tier.",
+            "endpoints": ["GET /health", "POST /chat"],
+            "note": "This server must stay running. Refresh/restart manually if the session resets."
+        })
 
 if __name__ == "__main__":
     # Bind to 0.0.0.0 so the preview environment and external apps can reach it.
