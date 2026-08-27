@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simple AI Chat</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 600px; margin: 40px auto; padding: 20px; background: #f5f5f5; }
+  h1 { font-size: 1.4rem; margin-bottom: 8px; }
+  .warning { background: #fff3cd; border-left: 4px solid #f0ad4e; padding: 10px 14px; border-radius: 6px; margin-bottom: 16px; font-size: 0.9rem; }
+  #messages { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 16px; height: 300px; overflow-y: auto; margin-bottom: 12px; }
+  .msg { margin: 8px 0; padding: 6px 10px; border-radius: 6px; }
+  .user { background: #e3f2fd; text-align: right; }
+  .agent { background: #e8f5e9; text-align: left; }
+  .status { font-size: 0.85rem; color: #666; margin-bottom: 12px; }
+  input[type="text"] { width: 75%; padding: 10px; border-radius: 6px; border: 1px solid #ccc; }
+  button { padding: 10px 18px; border: none; border-radius: 6px; background: #1976d2; color: #fff; cursor: pointer; }
+  button:disabled { background: #ccc; }
+  .tier { display: flex; gap: 8px; margin-bottom: 10px; }
+  .tier button { background: #555; font-size: 0.85rem; padding: 8px 14px; }
+  .tier button.active { background: #1976d2; }
+</style>
+</head>
+<body>
+<h1>Simple AI Chat</h1>
+
+<div class="tier">
+  <button onclick="setTier('free')" id="btn-free" class="active">Free Agents</button>
+  <button onclick="setTier('custom')" id="btn-custom">Custom API</button>
+  <button onclick="setTier('arena')" id="btn-arena">Better Agents (Arena)</button>
+</div>
+
+<div id="arena-warning" class="warning" style="display:none;">
+  ⚠️ Better Agents (Arena) may not work continuously. Availability: <strong id="arena-status">Checking...</strong>
+</div>
+
+<div class="status" id="tier-label">Using: Free Agents</div>
+
+<div id="messages"></div>
+
+<div>
+  <input type="text" id="input" placeholder="Ask something..." onkeydown="if(event.key==='Enter') send()">
+  <button onclick="send()">Send</button>
+</div>
+
+<script>
+let currentTier = 'free';
+let arenaAvailable = false;
+
+function setTier(tier) {
+  currentTier = tier;
+  document.querySelectorAll('.tier button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + tier).classList.add('active');
+  const names = { free: 'Free Agents', custom: 'Custom API', arena: 'Better Agents (Arena)' };
+  document.getElementById('tier-label').textContent = 'Using: ' + names[tier];
+  const warn = document.getElementById('arena-warning');
+  warn.style.display = tier === 'arena' ? 'block' : 'none';
+  if (tier === 'arena') checkArena();
+}
+
+function checkArena() {
+  fetch('http://localhost:8000/health')
+    .then(r => r.json())
+    .then(data => {
+      arenaAvailable = data.available;
+      document.getElementById('arena-status').textContent = arenaAvailable ? 'Available' : '0 available';
+    })
+    .catch(() => {
+      arenaAvailable = false;
+      document.getElementById('arena-status').textContent = '0 available';
+    });
+}
+
+function appendMsg(text, who) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  div.textContent = text;
+  document.getElementById('messages').appendChild(div);
+  document.getElementById('messages').scrollTop = document.getElementById('messages').scrollHeight;
+}
+
+function send() {
+  const input = document.getElementById('input');
+  const text = input.value.trim();
+  if (!text) return;
+  appendMsg(text, 'user');
+  input.value = '';
+
+  if (currentTier === 'arena' && !arenaAvailable) {
+    appendMsg('Sorry, Better Agents are currently unavailable (0 available). Try Free or Custom.', 'agent');
+    return;
+  }
+
+  if (currentTier === 'arena') {
+    fetch('http://localhost:8000/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text, tier: 'arena' })
+    })
+    .then(r => r.json())
+    .then(data => appendMsg(data.reply || 'No response.', 'agent'))
+    .catch(() => appendMsg('Arena agent server is down. Showing 0 available.', 'agent'));
+  } else {
+    // Free / Custom tiers — placeholder for your existing APIs
+    appendMsg('Response from ' + currentTier + ' tier (connect your API here).', 'agent');
+  }
+}
+
+// Check arena status periodically when on that tier
+setInterval(() => { if (currentTier === 'arena') checkArena(); }, 10000);
+</script>
+</body>
+</html>
