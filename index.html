@@ -59,7 +59,7 @@ function setTier(tier) {
 }
 
 function checkArena() {
-  fetch('https://zecay.pythonanywhere.com/health')
+  fetch('/health')
     .then(r => r.json())
     .then(data => {
       arenaAvailable = data.available;
@@ -92,7 +92,7 @@ function send() {
   }
 
   if (currentTier === 'arena') {
-    fetch('https://zecay.pythonanywhere.com/chat', {
+    fetch('/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message: text, tier: 'arena' })
@@ -109,5 +109,5 @@ function send() {
 // Check arena status periodically when on that tier
 setInterval(() => { if (currentTier === 'arena') checkArena(); }, 10000);
 </script>
-</body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a31d4904bf4e0e4d',t:'MTc4Nzg1Njg3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
